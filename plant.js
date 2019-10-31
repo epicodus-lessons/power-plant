@@ -1,44 +1,47 @@
-import State from './state.js';
-
-// This may seem like the equivalent of a global variable but normally it would be injected into files where it is needed.
-let state = new State();
-
 const changeState = (prop) => {
   return (value) => {
     return (state) => ({
       ...state,
-      [prop] : state[prop] + value
+      [prop] : (state[prop] || 0) + value
     })
   }
 }
 
-const feed = changeState("soil");
-const hydrate = changeState("water");
-const giveLight = changeState("light");
+const feed = changeState("soil")(1);
+const hydrate = changeState("water")(1);
+const giveLight = changeState("light")(1);
 
-// This is our function for creating new plants. It won't actually create new plants, though - instead, it needs to be passed into our update() function.
-const addPlant = inputtedName => {
-  name: inputtedName
-  light: 0
-  soil: 0
-  water: 0
-};
-
-const determineAction = (object, action) => {
-  switch(action) {
-    case "add":
-      return object;
-    case "feed":
-      return feed(object);
-    case "hydrate":
-      return hydrate(object);
-    case "giveLight":
-      return giveLight(object);
+const storeState = () => {
+  let oldState = {};
+  return (stateChangeFunction) => {
+    const newState = stateChangeFunction(oldState);
+    oldState = {...newState};
+    return newState;
   }
 }
 
-const updater = (object, action) => {
-  const newObject = determineAction(object, action);
-  return state.update(newObject);
+const stateChanger = storeState();
 
+const updateDisplay = (state) => {
+  $('#soil-value').text(state.soil);
+  $('#light-value').text(state.light);
+  $('#water-value').text(state.water);
 }
+
+$(document).ready(function() {
+
+  $('#feed').click(function() {
+    const newState = stateChanger(feed);
+    updateDisplay(newState);
+  });
+
+  $('#water').click(function() {
+    const newState = stateChanger(hydrate);
+    updateDisplay(newState);
+  });
+
+  $('#light').click(function() {
+    const newState = stateChanger(giveLight);
+    updateDisplay(newState);
+  });
+});
